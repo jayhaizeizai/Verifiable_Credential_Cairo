@@ -8,7 +8,7 @@ from starkware.cairo.common.cairo_secp.bigint import uint256_to_bigint, BigInt3
 from starkware.cairo.common.cairo_secp.ec import EcPoint
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
-//from secp import verify_ecdsa
+
 
 func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     alloc_locals;
@@ -79,33 +79,20 @@ func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
         ids.msgHash.low = hashBytes & ((1<<128) - 1)
         ids.msgHash.high = hashBytes >> 128
         start = time.time()
-    %}
+    %}// This hint is mainly about reading VC_file from input file and do some preprocess(such as hash, hexadecimal) for cairo, no meanful data process is made here
 
-    let eth_address_acceptable=35029207752483137963156621618327446821269239226;
+    let eth_address_acceptable=35029207752483137963156621618327446821269239226;//replace your acceptable issuer's address in decimal here
     let (local keccak_ptr_start) = alloc();
     let keccak_ptr = keccak_ptr_start;
     verify_eth_signature_uint256{keccak_ptr=keccak_ptr}(msg_hash=msgHash, r=r, s=s, v=0, eth_address=eth_address_acceptable);
+    //This is the main verify process, using Cairo's offical function, source code:src/starkware/cairo/cairo_secp
     finalize_keccak(keccak_ptr_start=keccak_ptr_start, keccak_ptr_end=keccak_ptr);
 
-    // let x_point = uint256_to_bigint(pub_key_x);
-    // let y_point = uint256_to_bigint(pub_key_y);
-    // let public_key_pt = EcPoint(x_point.res, y_point.res);
-    // let (msg_hash_bigint: BigInt3) = uint256_to_bigint(msgHash);
-    // let (r_bigint: BigInt3) = uint256_to_bigint(r);
-    // let (s_bigint: BigInt3) = uint256_to_bigint(s);
-    // verify_ecdsa(public_key_pt=public_key_pt, msg_hash=msg_hash_bigint,r=r_bigint, s=s_bigint);
     
     %{
         print('cost time: ', time.time() - start)
     %}
     
-    // serialize_word(public_key_pt.x.d0);
-    // serialize_word(public_key_pt.x.d1);
-    // serialize_word(public_key_pt.x.d2);
-    // serialize_word(public_key_pt.y.d0);
-    // serialize_word(public_key_pt.y.d1);
-    // serialize_word(public_key_pt.y.d2);
-
-    serialize_word(eth_address);
+    serialize_word(eth_address);// Since Cairo don't have string type right now, we print eth_address to express successfully verify 
     return ();
 }
